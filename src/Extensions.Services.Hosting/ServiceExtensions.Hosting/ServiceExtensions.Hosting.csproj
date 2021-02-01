@@ -5,6 +5,8 @@
     <Version>1.0.0</Version>
     <Description>Extensions simplifying access to configuration and host details in ASP.NET Core applications.</Description>
     <PackageTags>Core AspNetCore Configuration Hosting AspNet Extensions</PackageTags>
+    <PackageProjectUrl>https://github.com/iDontJayEss/aspcore-hosting-extensions/tree/master/src/Extensions.Services.Hosting/ServiceExtensions.Hosting</PackageProjectUrl>
+    <PackageReleaseNotes>Initial Release.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
