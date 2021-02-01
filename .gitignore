@@ -3,3 +3,13 @@
 ################################################################################
 
 /.vs
+/src/Extensions.Services.Hosting/.vs/Extensions.Services.Hosting
+/src/Extensions.Services.Hosting/ServiceExtensions.Discovery.Mef/bin/Debug/netstandard2.0
+/src/Extensions.Services.Hosting/ServiceExtensions.Discovery.Mef/obj
+/src/Extensions.Services.Hosting/ServiceExtensions.Hosting/bin/Debug/netstandard2.0
+/src/Extensions.Services.Hosting/ServiceExtensions.Hosting/obj
+/src/Extensions.Services.Hosting/tests/ServiceExtensions.Discovery.Mef.MockImports/bin/Debug/netstandard2.0
+/src/Extensions.Services.Hosting/tests/ServiceExtensions.Discovery.Mef.MockImports/obj
+/src/Extensions.Services.Hosting/tests/ServiceExtensions.Discovery.Mef.Tests/bin/Debug/netcoreapp3.1
+/src/Extensions.Services.Hosting/tests/ServiceExtensions.Discovery.Mef.Tests/obj
+/src/Extensions.Services.Hosting/ServiceExtensions.Hosting/bin/Debug
