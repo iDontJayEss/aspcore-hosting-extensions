@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Linq;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.Composition;
 using System.ComponentModel.Composition.Hosting;
 using System.ComponentModel.Composition.Primitives;
-using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.Composition.ReflectionModel;
+using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace ServiceExtensions.Discovery.Mef
@@ -21,7 +22,7 @@ namespace ServiceExtensions.Discovery.Mef
         /// Creates a new instance of <see cref="MefLocator"/> using the default configuration.
         /// </summary>
         public MefLocator()
-            : this(ConfigAccessExtensions.GetConfig<MefSettings>("Mef")) { }
+            : this(ConfigAccess.GetConfig<MefSettings>("Mef")) { }
 
         /// <summary>
         /// Creates a new instance of <see cref="MefLocator"/> using the provided <paramref name="options"/>.
@@ -60,11 +61,9 @@ namespace ServiceExtensions.Discovery.Mef
         }
 
         private static CompositionContainer CreateContainer(MefSettings settings)
-        {
-            var catalogs = settings.Directories.Select(CreateCatalog);
-            var container = new CompositionContainer(new AggregateCatalog(catalogs));
-            return container;
-        }
+            => new CompositionContainer(
+                new AggregateCatalog(
+                    settings.Directories.Select(CreateCatalog)));
 
         private static ComposablePartCatalog CreateCatalog(MefDirectorySettings settings)
             => new DirectoryCatalog(settings.DirectoryPath, settings.SearchPattern);
@@ -92,7 +91,7 @@ namespace ServiceExtensions.Discovery.Mef
         /// <inheritdoc />
         public IEnumerable<ServiceDescriptor> ExportingServices
             => ExportGroups.SelectMany(group =>
-                group.ActiveExports.Select(export => new ServiceDescriptor(export.Contract, export.Implementation, group.Lifetime)));
+                group.ActiveExports.Select(export => new ServiceDescriptor(group.Contract, export.Implementation, group.Lifetime)));
 
         #endregion IServiceLocator Implementation
 
@@ -100,36 +99,54 @@ namespace ServiceExtensions.Discovery.Mef
             => Container.Catalog.SelectMany(exportingPart =>
                 exportingPart.ExportDefinitions.Select(export => new ExportedService
                 {
-                    Contract = Type.GetType($"{export.Metadata["ExportTypeIdentity"]}"),
+                    Contract = $"{export.Metadata["ExportTypeIdentity"]}",
                     Implementation = ReflectionModelServices.GetPartType(exportingPart).Value,
                     ExportName = export.ContractName
-                }));
+                })).ToList();
 
         private IEnumerable<ExportGroup> ExportGroups
             => AllExports.GroupBy(service => service.Contract)
                     .Select(group => new ExportGroup
                     {
-                        Contract = group.Key,
+                        Contract = GetExportContract(group.First().Implementation, group.Key),
                         ContractName = GetContract(group.Key),
                         Lifetime = GetLifetime(group.Key),
                         AvailableExports = group
-                    });
+                    }).ToList();
+
+        private static Type GetExportContract(Type impl, string contractType)
+        {
+            if (GetExports(impl).FirstOrDefault(export => IsMatch(export, contractType)) is ExportAttribute match)
+                return match.ContractType;
+            if (GetInheritedExports(impl).FirstOrDefault(export => IsMatch(export, contractType)) is InheritedExportAttribute inheritedMatch)
+                return inheritedMatch.ContractType;
+            return default;
+        }
+
+        private static bool IsMatch(ExportAttribute export, string typeName)
+            => export.ContractType is Type exportType && exportType.FullName.Equals(typeName);
 
 
-        private string GetContract<TService>() => GetContract(typeof(TService));
+        private static IEnumerable<ExportAttribute> GetExports(Type type)
+            => type.GetCustomAttributes<ExportAttribute>();
 
-        private string GetContract(Type serviceType)
+        private static IEnumerable<InheritedExportAttribute> GetInheritedExports(Type type)
+            => type.GetCustomAttributes<InheritedExportAttribute>(inherit: true);
+
+        private string GetContract<TService>() => GetContract(typeof(TService).FullName);
+
+        private string GetContract(string serviceType)
         {
             var contract = "";
-            if (Options.Contracts.Keys.FirstOrDefault(key => Regex.IsMatch(serviceType.FullName, key)) is string matchingKey)
+            if (Options.Contracts.Keys.FirstOrDefault(key => Regex.IsMatch(serviceType, key)) is string matchingKey)
                 contract = Options.Contracts[matchingKey];
             return contract;
         }
 
-        private ServiceLifetime GetLifetime(Type serviceType)
+        private ServiceLifetime GetLifetime(string serviceType)
         {
             var lifetime = ServiceLifetime.Singleton;
-            if (Options.Lifetimes.Keys.FirstOrDefault(key => Regex.IsMatch(serviceType.FullName, key)) is string matchingKey)
+            if (Options.Lifetimes.Keys.FirstOrDefault(key => Regex.IsMatch(serviceType, key)) is string matchingKey)
                 lifetime = Options.Lifetimes[matchingKey];
             return lifetime;
         }
@@ -139,8 +156,8 @@ namespace ServiceExtensions.Discovery.Mef
         private readonly IDisposable monitor;
 
         private bool disposedValue;
-        
 
+        /// <inheritdoc />
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
@@ -155,6 +172,7 @@ namespace ServiceExtensions.Discovery.Mef
             }
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             Dispose(disposing: true);

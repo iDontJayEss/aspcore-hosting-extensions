@@ -5,6 +5,9 @@ using System.Linq;
 
 namespace ServiceExtensions.Discovery.Mef
 {
+    /// <summary>
+    /// Convenience model used to group <see cref="ExportedService"/> instances by their common contract.
+    /// </summary>
     internal class ExportGroup
     {
         public Type Contract { get; set; }
@@ -24,6 +27,6 @@ namespace ServiceExtensions.Discovery.Mef
         public IEnumerable<ExportedService> ActiveExports
             => string.IsNullOrWhiteSpace(ContractName)
             ? DefaultExports
-            : AvailableExports.Where(export => export.Contract.Equals(ContractName));
+            : AvailableExports.Where(export => export.ExportName.Equals(ContractName));
     }
 }

@@ -1,8 +1,9 @@
-﻿using ServiceExtensions.Discovery.Mef.MockImports;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using ServiceExtensions.Discovery.Mef.MockImports;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 
 namespace ServiceExtensions.Discovery.Mef.Tests
 {
@@ -29,7 +30,7 @@ namespace ServiceExtensions.Discovery.Mef.Tests
         }
 
         [TestMethod]
-        public void Resolve_Test() 
+        public void Resolve_Test()
             => Validate(DefaultImplLocator, typeof(DefaultImplementation), typeof(AnotherDefaultImplementation));
 
         [TestMethod]
@@ -55,9 +56,26 @@ namespace ServiceExtensions.Discovery.Mef.Tests
         {
             var locator = DefaultImplLocator;
             var services = locator.ExportingServices;
+            Assert.AreEqual(2, services.Count());
+            Assert.AreEqual(1, GetMatches<IMySampleContract, DefaultImplementation>(services).Count());
+            Assert.AreEqual(1, GetMatches<IAnotherSampleContract, AnotherDefaultImplementation>(services).Count());
         }
 
+        [TestMethod]
+        public void GetServices_Multi_Test()
+        {
+            var locator = MultiLocator;
+            var services = locator.ExportingServices;
+            Assert.AreEqual(4, services.Count());
+            Assert.AreEqual(2, GetMatches<IMySampleContract>(services).Count());
+            Assert.AreEqual(2, GetMatches<IAnotherSampleContract>(services).Count());
+        }
 
+        private IEnumerable<ServiceDescriptor> GetMatches<TService>(IEnumerable<ServiceDescriptor> services, ServiceLifetime lifetime = ServiceLifetime.Singleton)
+            => services.Where(svc => svc.ServiceType == typeof(TService) && svc.Lifetime == lifetime);
+
+        private IEnumerable<ServiceDescriptor> GetMatches<TService, TImpl>(IEnumerable<ServiceDescriptor> services, ServiceLifetime lifetime = ServiceLifetime.Singleton)
+            => GetMatches<TService>(services, lifetime).Where(svc => svc.ImplementationType == typeof(TImpl));
 
         private static void Validate(MefLocator locator, string contractName, Type firstImpl, Type secondImpl)
         {

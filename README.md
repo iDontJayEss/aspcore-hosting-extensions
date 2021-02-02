@@ -1,2 +1,2 @@
-# aspcore-hosting-extensions
+# ServiceExtensions
 Extensions for ASP.NET Core applications.

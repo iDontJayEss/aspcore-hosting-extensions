@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -6,17 +7,38 @@ using System.Collections.Generic;
 
 namespace ServiceExtensions.Hosting
 {
+    /// <summary>
+    /// Manages global access to Hosting concerns.
+    /// </summary>
     public static class HostAccess
     {
-        public static void AddDefaultLoggingProvider(Action<ILoggingBuilder> provider)
+        /// <summary>
+        /// Adds a delegate for configuring the default Host's logging functionality.
+        /// </summary>
+        /// <param name="loggingDelegate">The delegate for configuring the <see cref="ILoggingBuilder"/> used to construct he default Host.</param>
+        public static void AddDefaultLoggingProvider(Action<ILoggingBuilder> loggingDelegate)
         {
-            DefaultLoggingProviders.Add(provider);
+            DefaultLoggingProviders.Add(loggingDelegate);
             ResetDefaultHost();
         }
 
-        public static void AddDefaultConfigProvider(Action<IConfigurationBuilder> provider)
+        /// <summary>
+        /// Adds a delegate for configuring the default Host's configuration functionality.
+        /// </summary>
+        /// <param name="configDelegate">The delegate for configuring the <see cref="IConfigurationBuilder"/> used to construct the default Host.</param>
+        public static void AddDefaultConfigProvider(Action<IConfigurationBuilder> configDelegate)
         {
-            DefaultConfigProviders.Add(provider);
+            DefaultConfigProviders.Add(configDelegate);
+            ResetDefaultHost();
+        }
+
+        /// <summary>
+        /// Adds a delegate for configuring the default Host's registered services.
+        /// </summary>
+        /// <param name="serviceDelegate">The delegate for configuring the <see cref="IServiceCollection"/> used to construct the default Host.</param>
+        public static void AddDefaultServices(Action<IServiceCollection> serviceDelegate)
+        {
+            DefaultServicesProviders.Add(serviceDelegate);
             ResetDefaultHost();
         }
 
@@ -36,6 +58,9 @@ namespace ServiceExtensions.Hosting
         private static IList<Action<IConfigurationBuilder>> DefaultConfigProviders { get; }
             = new List<Action<IConfigurationBuilder>>();
 
+        private static IList<Action<IServiceCollection>> DefaultServicesProviders { get; }
+            = new List<Action<IServiceCollection>>();
+
         private static IHost CreateDefaultHost()
             => Host.CreateDefaultBuilder()
                    .ConfigureAppConfiguration(configBuilder =>
@@ -48,6 +73,11 @@ namespace ServiceExtensions.Hosting
                        foreach (var provider in DefaultLoggingProviders)
                            provider?.Invoke(loggingBuilder);
                    })
+                   .ConfigureServices(services =>
+                   {
+                       foreach (var provider in DefaultServicesProviders)
+                           provider?.Invoke(services);
+                   })
                    .Build();
 
         private static Lazy<IHost> defaultHost
@@ -55,8 +85,23 @@ namespace ServiceExtensions.Hosting
 
         private static IHost DefaultHost => defaultHost.Value;
 
-        internal static IServiceProvider AmbientProvider { get; set; }
+        private static Lazy<IServiceProvider> providerBuilder
+            = new Lazy<IServiceProvider>(() => default);
 
+        internal static IServiceCollection AmbientServices
+        {
+            set => providerBuilder = new Lazy<IServiceProvider>(() => value.BuildServiceProvider());
+        }
+
+        internal static IServiceProvider AmbientProvider
+        {
+            get => providerBuilder.Value;
+            set => providerBuilder = new Lazy<IServiceProvider>(() => value);
+        }
+
+        /// <summary>
+        /// The global Service Provider.
+        /// </summary>
         public static IServiceProvider ServiceProvider => AmbientProvider ?? DefaultHost.Services;
     }
 }
