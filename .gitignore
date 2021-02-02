@@ -14,3 +14,7 @@
 /src/Extensions.Services.Hosting/tests/ServiceExtensions.Discovery.Mef.Tests/obj
 /src/Extensions.Services.Hosting/ServiceExtensions.Hosting/bin/Debug
 /src/Extensions.Services.Hosting/ServiceExtensions.Discovery.Mef/bin/Debug
+/src/Extensions.Services.Hosting/ServiceExtensions.Discovery.Mef/bin/Release
+/src/Extensions.Services.Hosting/ServiceExtensions.Hosting/bin/Release
+/src/Extensions.Services.Hosting/tests/ServiceExtensions.Discovery.Mef.MockImports/bin/Release/netstandard2.0
+/src/Extensions.Services.Hosting/tests/ServiceExtensions.Discovery.Mef.Tests/bin/Release/netcoreapp3.1
