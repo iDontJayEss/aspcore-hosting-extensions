@@ -31,5 +31,15 @@ namespace Microsoft.Extensions.Hosting
             return provider;
         }
 
+        /// <summary>
+        /// Registers the <paramref name="host"/> for global access.
+        /// </summary>
+        /// <param name="host">Instance of a Host exposed in Main.</param>
+        /// <returns>The input host.</returns>
+        public static IHost ConfigureHosting(this IHost host)
+        {
+            HostAccess.AmbientHost = host;
+            return host;
+        }
     }
 }

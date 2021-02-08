@@ -88,6 +88,11 @@ namespace ServiceExtensions.Hosting
         private static Lazy<IServiceProvider> providerBuilder
             = new Lazy<IServiceProvider>(() => default);
 
+        internal static IHost AmbientHost 
+        {
+            set => providerBuilder = new Lazy<IServiceProvider>(() => value.Services);
+        }
+
         internal static IServiceCollection AmbientServices
         {
             set => providerBuilder = new Lazy<IServiceProvider>(() => value.BuildServiceProvider());
