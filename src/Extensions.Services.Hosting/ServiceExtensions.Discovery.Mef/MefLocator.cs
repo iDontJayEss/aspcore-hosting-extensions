@@ -66,7 +66,7 @@ namespace ServiceExtensions.Discovery.Mef
                     settings.Directories.Select(CreateCatalog)));
 
         private static ComposablePartCatalog CreateCatalog(MefDirectorySettings settings)
-            => new DirectoryCatalog(settings.DirectoryPath, settings.SearchPattern);
+            => new DirectoryCatalog(settings.FullPath, settings.SearchPattern);
 
         #region IServiceLocator Implementation
 
